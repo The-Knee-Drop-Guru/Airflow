@@ -51,7 +51,7 @@ with DAG(
     dag_id = 'extract_batch_dag',
     default_args=default_args,
     description='A DAG to fetch batch data and upload to S3',
-    schedule_interval=None,
+    schedule_interval='0 10 * * *',
     catchup=False,
     tags=['batch', 'S3'],
 ) as dag:
