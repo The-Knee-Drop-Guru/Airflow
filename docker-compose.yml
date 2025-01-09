@@ -60,7 +60,7 @@ x-airflow-common:
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     AIRFLOW_VAR_DATA_DIR: /opt/airflow/data
-    _PIP_ADDITIONAL_REQUIREMENTS: "yfinance pandas numpy oauth2client gspread praw requests psycopg2-binary python-binance"
+    _PIP_ADDITIONAL_REQUIREMENTS: "yfinance pandas numpy oauth2client gspread praw requests psycopg2-binary python-binance scikit-learn tensorflow matplotlib"
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
