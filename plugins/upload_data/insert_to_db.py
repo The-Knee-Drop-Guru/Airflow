@@ -26,32 +26,25 @@ def insert_to_db(**context):
     # PostgreSQL 연결 설정 (Airflow Hook을 사용)
     hook = PostgresHook(postgres_conn_id="prod_db")  # Airflow Connections에서 설정한 conn_id 사용
 
-    # DELETE 쿼리 실행 (중복 방지를 위해 기존 데이터 삭제)
-    delete_query = """
-        DELETE FROM public.forecast_table
-        WHERE date_time >= %s
-        AND date_time < %s;
-    """
-    hook.run(delete_query, parameters=(execution_date_kst_hour, execution_date_kst_hour_plus_1h))
-    print(f"Deleted rows from public.forecast_table where date_time >= {execution_date_kst_hour} and date_time < {execution_date_kst_hour_plus_1h}")
-
-    # 데이터 삽입 쿼리 작성
-    insert_query = """
+    # 데이터 삽입 또는 업데이트 쿼리 작성
+    upsert_query = """
         INSERT INTO public.forecast_table (date_time, real_price, predicted_price)
-        VALUES (%s, %s, NULL);
+        VALUES (%s, %s, NULL)
+        ON CONFLICT (date_time)
+        DO UPDATE SET real_price = EXCLUDED.real_price;
     """
     
-    # 데이터 삽입 (executemany 방식 사용)
-    data_to_insert = [
+    # 데이터 준비
+    data_to_upsert = [
         (row['Open Time'], row['Close']) for _, row in df.iterrows()
     ]
     connection = hook.get_conn()
     cursor = connection.cursor()
 
     try:
-        cursor.executemany(insert_query, data_to_insert)
+        cursor.executemany(upsert_query, data_to_upsert)
         connection.commit()
-        print(f"{len(data_to_insert)} rows successfully inserted into public.forecast_table.")
+        print(f"{len(data_to_upsert)} rows successfully inserted or updated in public.forecast_table.")
     except Exception as e:
         connection.rollback()
         raise e
