@@ -4,6 +4,7 @@ airflow_login.py
 dbinit.py
 initdb.py
 secrets.py
+webserver_config.py
 
 # Airflow sqlite databases
 airflow.db
