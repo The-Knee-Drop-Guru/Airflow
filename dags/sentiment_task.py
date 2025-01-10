@@ -4,7 +4,7 @@ from airflow.operators.python import PythonOperator
 from airflow.models import Variable
 from airflow.hooks.base_hook import BaseHook
 from airflow.exceptions import AirflowException
-from upload_data.load_from_s3 import load_from_s3  # plugins 디렉토리에서 import
+from upload_data.download_from_s3 import download_from_s3  # plugins 디렉토리에서 import
 from datetime import datetime, timedelta
 import pandas as pd
 import requests
@@ -36,7 +36,7 @@ def fetch_data_from_s3(**kwargs):
     }
 
     # Use the load_from_s3 function to download files
-    load_from_s3(bucket_name, s3_hook, files_to_download, ti)
+    download_from_s3(bucket_name, s3_hook, files_to_download, ti)
 
     # Push file paths to XCom
     for file_name, variable_name in files_to_download.items():
