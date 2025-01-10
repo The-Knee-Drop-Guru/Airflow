@@ -3,7 +3,7 @@ import pandas as pd
 import pendulum
 from datetime import timedelta
 
-def insert_to_db(**context):
+def insert_to_db_hourly(**context):
     # execution_date를 한국 시간으로 변환
     execution_date_kst = pendulum.instance(context['logical_date']).in_timezone('Asia/Seoul')
     print("logical_date_kst: ", execution_date_kst)

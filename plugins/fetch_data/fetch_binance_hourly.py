@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta
-import pendulum
+from datetime import timedelta
 import pandas as pd
 from binance.client import Client
 from airflow.models import Variable  # Variable 임포트
