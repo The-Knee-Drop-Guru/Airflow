@@ -28,7 +28,7 @@ YAHOO_FINANCE_SYMBOLS_N_KEYS = [
 # 바이낸스 데이터 추출 후 업로드 시키는 함수
 def upload_binance_batch_data(ti):
     upload_to_s3(
-        data=ti.xcom_pull(task_ids='binance.fetch_binance_batch', key='binance_batch'),
+        data=ti.xcom_pull(task_ids='binance_batch_data_task_group.fetch_binance_batch', key='binance_batch'),
         s3_key="raw/btc_usdt_data.csv"
     )
 
@@ -36,7 +36,7 @@ def upload_binance_batch_data(ti):
 def upload_yahoo_batch_data(ti, yf_symbol, s3_key):
     upload_to_s3(
         data=ti.xcom_pull(
-            task_ids=f"yf.fetch_yf_batch_{yf_symbol.replace('^', '').replace('=', '')}",
+            task_ids=f"yahoo_batch_data_task_group.fetch_yf_batch_{yf_symbol.replace('^', '').replace('=', '')}",
             key=f'{yf_symbol}_batch'    # 복수의 심볼 사용으로 상단에 정의한 딕셔너리 참조
         ),
         s3_key=s3_key
