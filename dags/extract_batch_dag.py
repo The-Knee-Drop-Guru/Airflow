@@ -5,8 +5,9 @@ from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.dagrun_operator import TriggerDagRunOperator
 
+# 모듈화시킨 plugins 폴더 내 함수들을 import
 from fetch_data.fetch_binance_batch import fetch_binance_batch
-from fetch_data.fetch_yf_batch import fetch_yf_batch
+from fetch_data.fetch_yahoo_batch import fetch_yahoo_batch
 from upload_data.upload_to_s3 import upload_to_s3
 
 ################################################
@@ -84,7 +85,7 @@ with DAG(
 
             fetch_yahoo_batch_task = PythonOperator(
                 task_id=fetch_yahoo_task_id,
-                python_callable=fetch_yf_batch,
+                python_callable=fetch_yahoo_batch,
                 op_kwargs={'symbol': YAHOO_SYMBOL},
             )
 
