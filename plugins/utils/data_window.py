@@ -90,13 +90,12 @@ class DataWindow():
     def val(self):
         return self.make_dataset(self.val_df, shuffle=False)  # 검증 데이터 순서 유지
 
+    # 테스트이자 예측 인풋 데이터 반환
     @property
     def test(self):
         # return self.make_dataset(self.test_df, shuffle=False, batch_size=1)
-
-        # print(np.expand_dims(self.test_df, axis=0).shape)
         return  np.expand_dims(self.test_df, axis=0)
-# (30,13) -> (1, 30,13)
+    
     @property
     def sample_batch(self):
         result = getattr(self, '_sample_batch', None)

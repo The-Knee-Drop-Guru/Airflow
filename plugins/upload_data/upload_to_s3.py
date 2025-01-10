@@ -5,11 +5,12 @@ import logging
 
 def upload_to_s3(data, s3_key):
     """
-    Upload all of the files to S3
+    메모리에 저장한 파일 경로를 전달 받아 S3 버킷에 업로드하는 함수
     """
     logging.info(f"Starting upload to S3. File: {data}, S3 Key: {s3_key}")
 
-    s3_hook = S3Hook(aws_conn_id='aws_s3')  # conn id
+    # S3Hook 초기화
+    s3_hook = S3Hook(aws_conn_id='aws_s3')  
 
     try:
         # AWS 연결 정보에서 추가 속성(extra) 가져오기

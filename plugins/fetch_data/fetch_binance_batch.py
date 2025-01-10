@@ -1,44 +1,45 @@
 import datetime
 import pandas as pd
 from binance.client import Client
-from airflow.models import Variable  # Variable 임포트
+from airflow.models import Variable 
 
 # Binance API 설정, Airflow Variable로 설정된 값 불러오기
-api_key = Variable.get("API_KEY")  # 'API_KEY'라는 변수 불러오기
-api_secret = Variable.get("API_SECRET")  # 'API_SECRET'라는 변수 불러오기
+api_key = Variable.get("API_KEY") 
+api_secret = Variable.get("API_SECRET")  
 
-# Function to fetch Binance data and return it as a pandas DataFrame
+# 추출하려는 'BTCUSDT' 심볼과, 추출 인터벌 정의
+SYMBOL = 'BTCUSDT'
+INTERVAL = Client.KLINE_INTERVAL_1DAY
+
 def fetch_binance_batch(**kwargs):
-    # Set up Binance API client
+    """바이낸스 API 사용해 'BTCUSDT' 가격 배치 데이터 추출, 
+    메모리에 csv 형식으로 저장 후 경로를 XCom에 Push 하는 함수"""
+
+    # 바이낸스 API 클라이언트 셋업
     client = Client(api_key, api_secret)
 
-    # Define the symbol for BTC/USDT pair
-    symbol = 'BTCUSDT'
-
-    # Define custom start and end time
+    # 시작, 어제 날짜 설정
     start_time = datetime.datetime(2018, 1, 1, 0, 0, 0)
-    # start_time = datetime.datetime(2024, 12, 27, 0, 0, 0)
-
     yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # Convert start and end time to string format required by Binance API
+    # 바이낸스 API에서 요구하는 시작, 종료 시점을 문자열 형식으로 변환
     start_str = start_time.strftime('%Y-%m-%d %H:%M:%S')
     end_str = yesterday.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Fetch historical kline (candlestick) data from Binance API
-    klines = client.get_historical_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1DAY, start_str=start_str, end_str=end_str)
+    # 바이낸스 API 호출
+    klines = client.get_historical_klines(symbol=SYMBOL, interval=INTERVAL, start_str=start_str, end_str=end_str)
 
-    # Convert the data into a pandas dataframe for easier manipulation
+    # 호출결과를 데이터프레임으로 변환
     df_M = pd.DataFrame(klines, columns=[
         'Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time',
         'Quote Asset Volume', 'Number of Trades', 'Taker Buy Base Asset Volume',
         'Taker Buy Quote Asset Volume', 'Ignore'
     ])
 
-    # Drop unnecessary columns
+    # 불필요 열 제거
     df_M = df_M.drop(columns=['Close Time', 'Ignore'])
 
-    # Convert numerical columns to float
+    # numerical 데이터 열을 float type으로 변환
     df_M[['Open', 'High', 'Low', 'Close', 'Volume', 'Quote Asset Volume',
           'Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume']] = \
     df_M[['Open', 'High', 'Low', 'Close', 'Volume', 'Quote Asset Volume',
@@ -46,11 +47,9 @@ def fetch_binance_batch(**kwargs):
 
     df_M['Open Time'] = pd.to_datetime(df_M['Open Time'], unit='ms')
 
-    # return df_M
-    # Save dataframe as CSV in memory
+    # 데이터프레임을 csv 형식으로 메모리에 저장
     OUTPUT_FILE = "/tmp/btc_usdt_data.csv"  # 로컬 저장 경로
     df_M.to_csv(OUTPUT_FILE, index=False)
     
-    # Push the CSV string to XCom
+    # csv 저장 경로를 XCom 에 푸시해 이후 Task에서 사용
     kwargs['ti'].xcom_push(key='binance_batch', value=OUTPUT_FILE)
-

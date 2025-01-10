@@ -33,7 +33,7 @@ def add_technical_features(data, sma_window=20, rsi_period=14):
 
 def scale_data(train_data, valid_data, test_data, target='BTC_Close'):
     """
-    Train, Validation, Test 데이터에 로그 변환 및 스케일링을 적용합니다.
+    Train, Validation, Test 데이터에 로그 변환 및 스케일링 적용하는 함수
     """
 
     # 로그 변환 및 타겟 RobustScaler 스케일링
@@ -119,7 +119,7 @@ def preprocessing(ti):
 
     target_date = today.strftime("%Y-%m-%d")
     ############################
-    ###### 데이터셋 나누기 #######      
+    ###### 데이터셋 나누기 ######     
     ############################
     # print("target_date: ",target_date)
     # start_date = (datetime.strptime(target_date, "%Y-%m-%d") - timedelta(days=365) + timedelta(days=1)).strftime("%Y-%m-%d")
@@ -153,7 +153,7 @@ def preprocessing(ti):
     test_df = test_df.reset_index(drop=True)
     
     ############################
-    ######### 스케일링 ##########
+    ####### 스케일링 실행 #######
     ############################
     scaled_train, scaled_valid, scaled_test, scalers = scale_data(train_df, val_df, test_df)
 

@@ -31,10 +31,11 @@ def train_n_predict(ti):
     
     lstm_model.fit(window.train, epochs=50, validation_data=window.val, callbacks=[early_stopping])    # input, label = window.test
     predict = lstm_model.predict(window.test)
-    # Reverse the scaling
+    
+    # 로버스트 스케일러로 역변환 적용
     pred_lstm_inv_scaled = scalers['target_scaler'].inverse_transform(np.array([predict[0][0]]).reshape(-1, 1))
 
-    # 2. Apply np.expm1 (inverse of log transformation)
+    # 로그 변환의 역변환 적용
     pred_lstm_final = np.expm1(pred_lstm_inv_scaled[0][0])
     print(pred_lstm_final)
 

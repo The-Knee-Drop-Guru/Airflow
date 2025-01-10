@@ -1,20 +1,22 @@
 from datetime import timedelta
 import pandas as pd
 from binance.client import Client
-from airflow.models import Variable  # Variable 임포트
+from airflow.models import Variable  
 
 # Binance API 설정, Airflow Variable로 설정된 값 불러오기
-api_key = Variable.get("API_KEY")  # 'API_KEY'라는 변수 불러오기
-api_secret = Variable.get("API_SECRET")  # 'API_SECRET'라는 변수 불러오기
+api_key = Variable.get("API_KEY") 
+api_secret = Variable.get("API_SECRET")  
 
-# Function to fetch Binance data and return it as a pandas DataFrame
+# 추출하려는 'BTCUSDT' 심볼과, 추출 인터벌 정의
+SYMBOL = 'BTCUSDT'
+INTERVAL = Client.KLINE_INTERVAL_1MINUTE
+
 def fetch_binance_hourly(**context):
-    # Set up Binance API client
-    client = Client(api_key, api_secret)
+    """바이낸스 API 사용해 매시간 지난 시간의 60분치 'BTCUSDT' 가격 데이터 추출, 
+    메모리에 csv 형식으로 저장 후 경로를 XCom에 Push 하는 함수"""
 
-    # Define the symbol and interval
-    symbol = 'BTCUSDT'
-    interval = Client.KLINE_INTERVAL_1MINUTE
+    # 바이낸스 API 클라이언트 셋업
+    client = Client(api_key, api_secret)
 
     logical_date = context["logical_date"]  # Airflow가 제공하는 datetime 객체
 
@@ -33,14 +35,14 @@ def fetch_binance_hourly(**context):
     print(f"logical_date_kst: {logical_date_kst}")
     print(f"start_time_kst: {start_time_kst}, end_time_kst: {end_time_kst}")
 
-    # Convert start and end time to string format required by Binance API
+    # 바이낸스 API에서 요구하는 시작, 종료 시점을 문자열 형식으로 변환
     start_str = start_time.strftime('%Y-%m-%d %H:%M:%S')
     end_str = end_time.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Fetch historical kline (candlestick) data from Binance API
-    klines = client.get_historical_klines(symbol=symbol, interval=interval, start_str=start_str, end_str=end_str)
+    # 바이낸스 API 호출
+    klines = client.get_historical_klines(symbol=SYMBOL, interval=INTERVAL, start_str=start_str, end_str=end_str)
 
-    # Convert the data into a pandas dataframe for easier manipulation
+    # 호출결과를 데이터프레임으로 변환
     df_M = pd.DataFrame(klines, columns=[
         'Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time',
         'Quote Asset Volume', 'Number of Trades', 'Taker Buy Base Asset Volume',
@@ -54,11 +56,12 @@ def fetch_binance_hourly(**context):
 
     df_M['Open Time'] = pd.to_datetime(df_M['Open Time'], unit='ms')
 
-    df_M['Open Time'] = df_M['Open Time'] + timedelta(hours=9)  # UTC에서 9시간 추가하여 KST로 변환
+    # UTC에서 9시간 추가하여 KST로 변환
+    df_M['Open Time'] = df_M['Open Time'] + timedelta(hours=9)  
 
-    # Save dataframe as CSV in memory
+    # 데이터프레임을 csv 형식으로 메모리에 저장
     OUTPUT_FILE = "/tmp/btc_usdt_hourly_data.csv"  # 로컬 저장 경로
     df_M.to_csv(OUTPUT_FILE, index=False)
     
-    # Push the CSV string to XCom
+    # csv 저장 경로를 XCom 에 푸시해 이후 Task에서 사용
     context['ti'].xcom_push(key='binance_hourly', value=OUTPUT_FILE)
