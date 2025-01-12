@@ -1,7 +1,5 @@
 import pandas as pd
 import numpy as np
-import joblib
-import pendulum
 from datetime import timedelta, datetime
 from sklearn.preprocessing import MinMaxScaler, RobustScaler
 
@@ -30,43 +28,6 @@ def add_technical_features(data, sma_window=20, rsi_period=14):
     # 2020년 부터 데이터 넣기
     data = data[data['Date'].dt.year > 2018] # 2012 ~ 2021년
     return data
-
-def scale_data(train_data, valid_data, test_data, target='BTC_Close'):
-    """
-    Train, Validation, Test 데이터에 로그 변환 및 스케일링을 적용합니다.
-    """
-
-    # 로그 변환 및 타겟 RobustScaler 스케일링
-    for data in [train_data, valid_data, test_data]:
-        data.loc[:, target] = np.log1p(data[target])
-
-    target_scaler = RobustScaler()
-    scaled_train_target = target_scaler.fit_transform(train_data[[target]])
-    scaled_valid_target = target_scaler.transform(valid_data[[target]])
-    scaled_test_target = target_scaler.transform(test_data[[target]])
-
-    # Min-Max Scaling 적용 변수
-    features = [col for col in train_data.columns if col != target]  # 나머지 변수 minmax만 적용
-    feature_scaler = MinMaxScaler()
-
-    # 올바른 순서로 fit 및 transform 적용
-    scaled_train_features = feature_scaler.fit_transform(train_data[features])
-    scaled_valid_features = feature_scaler.transform(valid_data[features])  # 학습 데이터에서 fit한 스케일러 사용
-    scaled_test_features = feature_scaler.transform(test_data[features])   # 학습 데이터에서 fit한 스케일러 사용
-
-    scaled_train = pd.DataFrame(scaled_train_features, columns=features, index=train_data.index)
-    scaled_train[target] = scaled_train_target
-
-    scaled_valid = pd.DataFrame(scaled_valid_features, columns=features, index=valid_data.index)
-    scaled_valid[target] = scaled_valid_target
-
-    scaled_test = pd.DataFrame(scaled_test_features, columns=features, index=test_data.index)
-    scaled_test[target] = scaled_test_target
-
-    return scaled_train, scaled_valid, scaled_test, {
-        'minmax_scaler': feature_scaler,
-        'target_scaler': target_scaler
-    }
 
 def preprocessing(ti):
     # dict 통해 각 데이터 저장
@@ -107,57 +68,12 @@ def preprocessing(ti):
     # null 값 이전 데이터 값으로 fill
     merged_data = merged_data.fillna(method='ffill')
 
-    # 1월 1일 데이터는 얻을 수 없다. 12월 31일 데이터를 ffill해야하는데 못해서
-    merged_data = merged_data.iloc[1:]
+    # 상관분석 및 다중공선성 해결을 위한 변수 제거 
+    merged_data = merged_data.drop(columns=['BTC_Open', 'BTC_High', 'BTC_Low', 'BTC_TBAV', 'BTC_TBQAV'])
+    
+    # 보조지표 추가 
+    merged_data_added = add_technical_features(merged_data)
     merged_data.reset_index(drop=True, inplace=True)
 
-    merged_data = merged_data.drop(columns=['BTC_Open', 'BTC_High', 'BTC_Low', 'BTC_TBAV', 'BTC_TBQAV'])
-
-    merged_data_added = add_technical_features(merged_data)
-
-    today = pendulum.instance(ti.execution_date).date()
-
-    target_date = today.strftime("%Y-%m-%d")
-    ############################
-    ###### 데이터셋 나누기 #######      
-    ############################
-    # print("target_date: ",target_date)
-    # start_date = (datetime.strptime(target_date, "%Y-%m-%d") - timedelta(days=365) + timedelta(days=1)).strftime("%Y-%m-%d")
-    
-    train_df_start_date = (datetime.strptime(target_date, "%Y-%m-%d") - timedelta(days=9+365*5-1))
-    train_df_end_date = (datetime.strptime(target_date, "%Y-%m-%d") - timedelta(days=9))
-    train_period = (train_df_end_date-train_df_start_date).days + 1
-    # print("train_df 시작일: ", train_df_start_date.strftime("%Y-%m-%d"))
-    # print("train_df 종료일: ", train_df_end_date.strftime("%Y-%m-%d"))
-    train_df = merged_data_added[(merged_data_added['Date'] >= train_df_start_date) & (merged_data_added['Date'] <= train_df_end_date)]
-
-    val_df_start_date = (datetime.strptime(target_date, "%Y-%m-%d") - timedelta(days=15))
-    val_df_end_date = (datetime.strptime(target_date, "%Y-%m-%d") - timedelta(days=2))
-    val_period = (val_df_end_date-val_df_start_date).days + 1
-    # print("val_df 시작일: ", val_df_start_date.strftime("%Y-%m-%d"))
-    # print("val_df 종료일: ", val_df_end_date.strftime("%Y-%m-%d"))
-    val_df = merged_data_added[(merged_data_added['Date'] >= val_df_start_date) & (merged_data_added['Date'] <= val_df_end_date)]
-
-    test_df_start_date = (datetime.strptime(target_date, "%Y-%m-%d") - timedelta(days=7))
-    test_df_end_date = (datetime.strptime(target_date, "%Y-%m-%d") - timedelta(days=1))
-    test_period = (test_df_end_date-test_df_start_date).days + 1
-    # print("test_df 시작일: ", test_df_start_date.strftime("%Y-%m-%d"))
-    # print("test_df 종료일: ", test_df_end_date.strftime("%Y-%m-%d"))
-    test_df = merged_data_added[(merged_data_added['Date'] >= test_df_start_date) & (merged_data_added['Date'] <= test_df_end_date)]
-
-    train_df.drop(columns=['Date'], inplace=True)
-    val_df.drop(columns=['Date'], inplace=True)
-    test_df.drop(columns=['Date'], inplace=True)
-    train_df = train_df.reset_index(drop=True)
-    val_df = val_df.reset_index(drop=True)
-    test_df = test_df.reset_index(drop=True)
-    
-    ############################
-    ######### 스케일링 ##########
-    ############################
-    scaled_train, scaled_valid, scaled_test, scalers = scale_data(train_df, val_df, test_df)
-
-    scaled_train.to_csv("/tmp/scaled_train.csv", index=False)
-    scaled_valid.to_csv("/tmp/scaled_valid.csv", index=False)
-    scaled_test.to_csv("/tmp/scaled_test.csv", index=False)
-    joblib.dump(scalers, '/tmp/scalers.joblib')
+    # 최종 데이터 파일 저장
+    merged_data.to_csv("/tmp/merged_data.csv", index=False)

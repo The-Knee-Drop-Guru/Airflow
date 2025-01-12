@@ -8,9 +8,13 @@ from airflow.hooks.base_hook import BaseHook
 from airflow.exceptions import AirflowException
 
 from train.preprocessing import preprocessing
-from train.train_n_predict import train_n_predict
+from train.predict_next_day import predict_next_day
+from train.feature_importance import feature_importance
+
 from upload_data.load_from_s3 import load_from_s3
 from upload_data.insert_to_db_daily import insert_to_db_daily
+from upload_data.insert_to_db_SHAP import insert_to_db_SHAP
+
 
 LOCAL_TIMEZONE = pendulum.timezone("Asia/Seoul")
 
@@ -31,7 +35,7 @@ with DAG(
     dag_id = 'training_dag',
     default_args = {
     'owner': 'airflow',
-    'retries': 1,  # retries는 여전히 default_args에서 설정 가능
+    'retries': 0,  # retries는 여전히 default_args에서 설정 가능
     },
     description='A DAG to train and make daily prediction',
     schedule_interval=None,
@@ -60,6 +64,7 @@ with DAG(
         "files_to_download": files_to_download,  # 파일 매핑 전달
         },
     )
+    ###
 
     # 전처리 Task
     preprocessing_task = PythonOperator(
@@ -68,9 +73,9 @@ with DAG(
     )
 
     # 훈련 및 예측측 Task
-    train_n_predict_task = PythonOperator(
-        task_id='train_n_predict',
-        python_callable= train_n_predict,
+    predict_task = PythonOperator(
+        task_id='predict_next_day',
+        python_callable= predict_next_day,
     )
 
     # RDS에 예측값 로드 Task
@@ -79,5 +84,17 @@ with DAG(
         python_callable= insert_to_db_daily,
     )
 
+    # 피쳐 중요도 task
+    SHAP_task = PythonOperator(
+        task_id='feature_importance',
+        python_callable= feature_importance,
+    )
+
+    # RDS에 중요도 로드 Task
+    insert_to_db_SHAP_task = PythonOperator(
+        task_id='insert_to_db_SHAP',
+        python_callable= insert_to_db_SHAP,
+    )
+
     # Task 종속성
-    load_from_s3_task >> preprocessing_task >> train_n_predict_task >> insert_to_db_daily_task
+    load_from_s3_task >> preprocessing_task >> predict_task >> insert_to_db_daily_task >> SHAP_task >> insert_to_db_SHAP_task
