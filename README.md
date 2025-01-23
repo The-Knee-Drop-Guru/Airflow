@@ -6,13 +6,10 @@
 
 This repository contains the final project developed by **Team 무릎팍도사**, as part of the Programmers Data Engineering 4th Cohort. The aim of this project is to build a machine learning model that predicts the price of Cardano native tokens using the DEXHUNTER API and deploy it as a web application.
 
-https://youtu.be/Pyh8T3MzuS8
-[![프로젝트 시연 영상](https://img.youtube.com/vi/Pyh8T3MzuS8/0.jpg)](https://www.youtube.com/watch?v=Pyh8T3MzuS8)
 <!-- 크기 조정 -->
 <a href="https://www.youtube.com/watch?v=Pyh8T3MzuS8">
-    <img src="https://img.youtube.com/vi/Pyh8T3MzuS8/0.jpg" width="400" />
+    <img src="https://img.youtube.com/vi/Pyh8T3MzuS8/0.jpg" width="300" />
 </a>
-[YouTube Demo](https://youtu.be/Pyh8T3MzuS8)
 
 ## Overview
 This project aims to predict the price of Cardano native tokens by using machine learning models trained on historical price data obtained from the DEXHUNTER API.
