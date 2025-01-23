@@ -8,6 +8,10 @@ This repository contains the final project developed by **Team 무릎팍도사**
 
 https://youtu.be/Pyh8T3MzuS8
 [![프로젝트 시연 영상](https://img.youtube.com/vi/Pyh8T3MzuS8/0.jpg)](https://www.youtube.com/watch?v=Pyh8T3MzuS8)
+<!-- 크기 조정 -->
+<a href="https://www.youtube.com/watch?v=Pyh8T3MzuS8">
+    <img src="https://img.youtube.com/vi/Pyh8T3MzuS8/0.jpg" width="400" />
+</a>
 [YouTube Demo](https://youtu.be/Pyh8T3MzuS8)
 
 ## Overview
