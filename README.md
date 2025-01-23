@@ -43,7 +43,7 @@ The pipeline is designed as follows:
 
 ---
 
-## Project Main Structure
+## Repository Structure
 ```
 .
 ├── dags
